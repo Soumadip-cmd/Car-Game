@@ -1,3 +1,32 @@
+/* Car Jump Animation only in menu-screen */
+/* Car Jump Animation only in menu-screen */
+#menu-screen .player-car.jumping {
+  animation: carJumpEffect 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 200;
+}
+
+@keyframes carJumpEffect {
+  0% {
+    transform: translateX(-50%) translateY(0);
+    box-shadow: 0 4px 16px 0 rgba(74,144,226,0.2);
+  }
+  20% {
+    transform: translateX(-50%) translateY(-40px) scale(1.08);
+    box-shadow: 0 16px 32px 0 rgba(74,144,226,0.25);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-60px) scale(1.12);
+    box-shadow: 0 24px 48px 0 rgba(74,144,226,0.35);
+  }
+  80% {
+    transform: translateX(-50%) translateY(-40px) scale(1.08);
+    box-shadow: 0 16px 32px 0 rgba(74,144,226,0.25);
+  }
+  100% {
+    transform: translateX(-50%) translateY(0) scale(1);
+    box-shadow: 0 4px 16px 0 rgba(74,144,226,0.2);
+  }
+}
 /* Reset and Base Styles */
 * {
   margin: 0;
@@ -49,6 +78,8 @@ body {
   font-size: 2.5rem;
   font-weight: 700;
   text-align: center;
+  display: none;
+
   margin-bottom: 15px;
   color: #ffffff;
 }
@@ -1338,3 +1369,58 @@ body {
     transform: scale(0.95);
   }
 }
+/* Touch Instructions */
+.touch-instructions {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  z-index: 50;
+  /* pointer-events: none; */
+  transition: opacity 0.5s ease;
+  display: none;
+}
+
+.player-car {
+  pointer-events: auto !important;
+  z-index: 100;
+}
+
+.touch-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.touch-hint span {
+  background: rgba(74, 144, 226, 0.2);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #4a90e2;
+}
+
+/* Lane change animation */
+.player-car.lane-change {
+  animation: laneChangeEffect 0.3s ease;
+}
+
+@keyframes laneChangeEffect {
+  0% {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)) 
+            drop-shadow(0 0 15px rgba(74, 144, 226, 0.6));
+  }
+  100% {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+  }
+}
+

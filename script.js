@@ -41,7 +41,15 @@
                 this.roadLines = [];
                 this.activePowerup = null;
                 this.powerupTime = 0;
-                
+                 // Touch controls
+                this.touch = {
+                    startX: 0,
+                    startY: 0,
+                    startTime: 0,
+                    lastTap: 0,
+                    swipeThreshold: 30,
+                    doubleTapThreshold: 300
+                };
                 this.achievements = {
                     firstRace: false,
                     score1000: false,
@@ -98,20 +106,45 @@
                     this.player.x = this.lanes[this.player.lane];
                     const playerCar = document.getElementById("player-car");
                     const roadContainer = document.querySelector('.road-container');
-                    
                     if (playerCar && roadContainer) {
                         // Position car relative to road container
                         const roadRect = roadContainer.getBoundingClientRect();
                         const gameAreaRect = document.getElementById("game-area").getBoundingClientRect();
-                        
                         // Calculate position relative to road container
                         const roadLeft = roadRect.left - gameAreaRect.left;
                         const carLeft = roadLeft + this.player.x;
-                        
                         playerCar.style.left = carLeft + "px";
                         playerCar.style.bottom = "80px";
                         playerCar.style.transform = "translateX(-50%)";
                     }
+                }
+            }
+
+            moveLeft() {
+                if (this.player.lane > 0) {
+                    this.player.lane--;
+                    this.player.x = this.lanes[this.player.lane];
+                    this.updateLanes();
+                    this.animateLaneChange();
+                }
+            }
+
+            moveRight() {
+                if (this.player.lane < this.lanes.length - 1) {
+                    this.player.lane++;
+                    this.player.x = this.lanes[this.player.lane];
+                    this.updateLanes();
+                    this.animateLaneChange();
+                }
+            }
+
+            animateLaneChange() {
+                const playerCar = document.getElementById("player-car");
+                if (playerCar) {
+                    playerCar.classList.remove("lane-change");
+                    // Force reflow for restart animation
+                    void playerCar.offsetWidth;
+                    playerCar.classList.add("lane-change");
                 }
             }
         }
@@ -233,6 +266,16 @@
             const targetScreen = document.getElementById(screenId);
             if (targetScreen) {
                 targetScreen.classList.remove("hidden");
+            }
+
+            // Show mobile controls only on game screen
+            const mobileControls = document.getElementById('mobile-controls');
+            if (mobileControls) {
+                if (screenId === 'game-screen') {
+                    mobileControls.style.display = 'block';
+                } else {
+                    mobileControls.style.display = 'none';
+                }
             }
 
             switch (screenId) {
@@ -820,42 +863,45 @@
             });
         }
 
-        function jump() {
-            if (gameState.jumpsLeft > 0 && !gameState.player.jumping) {
-                gameState.player.jumping = true;
-                gameState.jumpsLeft--;
-                gameState.stats.jumpsUsed++;
-                
-                const playerCar = document.getElementById("player-car");
-                if (playerCar) {
-                    playerCar.classList.add("jumping");
-                    // Add speed burst effect
-                    playerCar.classList.add("speed-burst");
-                }
+function jump() {
+    if (!gameState.gameRunning) return;
+    if (gameState.jumpsLeft > 0 && !gameState.player.jumping) {
+        gameState.player.jumping = true;
+        gameState.jumpsLeft--;
+        gameState.stats.jumpsUsed++;
 
-                // Create jump particles
-                setTimeout(() => {
-                    const roadContainer = document.querySelector('.road-container');
-                    if (roadContainer) {
-                        const roadRect = roadContainer.getBoundingClientRect();
-                        const gameAreaRect = document.getElementById("game-area").getBoundingClientRect();
-                        const roadLeft = roadRect.left - gameAreaRect.left;
-                        const carLeft = roadLeft + gameState.player.x;
-                        
-                        createParticles(carLeft, window.innerHeight * 0.75, "#00ff00", 20);
-                        createParticles(carLeft, window.innerHeight * 0.75, "#ffff00", 15);
-                    }
-                }, 200);
-
-                setTimeout(() => {
-                    gameState.player.jumping = false;
-                    const playerCar = document.getElementById("player-car");
-                    if (playerCar) {
-                        playerCar.classList.remove("jumping", "speed-burst");
-                    }
-                }, 800);
-            }
+        const playerCar = document.getElementById("player-car");
+        if (playerCar) {
+            playerCar.classList.remove("speed-burst"); // Remove any speed burst effect
+            playerCar.classList.add("jumping");
         }
+
+        // Extra jump burst effect
+        createJumpBoostEffect();
+
+        // Create jump particles
+        setTimeout(() => {
+            const roadContainer = document.querySelector('.road-container');
+            if (roadContainer) {
+                const roadRect = roadContainer.getBoundingClientRect();
+                const gameAreaRect = document.getElementById("game-area").getBoundingClientRect();
+                const roadLeft = roadRect.left - gameAreaRect.left;
+                const carLeft = roadLeft + gameState.player.x;
+
+                createParticles(carLeft, window.innerHeight * 0.75, "#00ff00", 20);
+                createParticles(carLeft, window.innerHeight * 0.75, "#ffff00", 15);
+            }
+        }, 200);
+
+        setTimeout(() => {
+            gameState.player.jumping = false;
+            const playerCar = document.getElementById("player-car");
+            if (playerCar) {
+                playerCar.classList.remove("jumping");
+            }
+        }, 800);
+    }
+}
 
         // Obstacle Management
         function updateObstacles() {
@@ -1891,45 +1937,104 @@
         }
 
         // Event Listeners
-        function setupEventListeners() {
-            document.addEventListener("keydown", (e) => {
-                if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " ", "Space", "KeyP"].includes(e.code)) {
-                    e.preventDefault();
-                    gameState.keys[e.code] = true;
-                    gameState.keys[e.key] = true;
-                    
-                    // Handle space bar immediately for jump
-                    if ((e.code === "Space" || e.key === " ") && gameState.gameRunning && !gameState.gamePaused) {
-                        if (gameState.jumpsLeft > 0 && !gameState.player.jumping) {
-                            jump();
+function setupEventListeners() {
+    document.addEventListener("keydown", (e) => {
+        if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " ", "Space", "KeyP"].includes(e.code)) {
+            e.preventDefault();
+            gameState.keys[e.code] = true;
+            gameState.keys[e.key] = true;
+            // Handle space bar immediately for jump
+            if ((e.code === "Space" || e.key === " ") && gameState.gameRunning && !gameState.gamePaused) {
+                if (gameState.jumpsLeft > 0 && !gameState.player.jumping) {
+                    jump();
+                }
+            }
+        }
+    });
+
+    document.addEventListener("keyup", (e) => {
+        gameState.keys[e.code] = false;
+        gameState.keys[e.key] = false;
+    });
+
+    window.addEventListener("resize", () => {
+        gameState.isMobile = window.innerWidth <= 768;
+        gameState.updateLanes();
+    });
+
+    document.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+    });
+
+    // Touch controls for mobile
+    function setupTouchControls() {
+        const carEl = document.getElementById("player-car");
+        if (!carEl) return;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let lastTap = 0;
+        let tapTimeout = null;
+        carEl.addEventListener("touchstart", function(e) {
+            if (e.touches.length === 1) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }
+        });
+        carEl.addEventListener("touchend", function(e) {
+            if (e.changedTouches.length === 1) {
+                const dx = e.changedTouches[0].clientX - touchStartX;
+                const dy = e.changedTouches[0].clientY - touchStartY;
+                const absDx = Math.abs(dx);
+                const absDy = Math.abs(dy);
+                // Swipe detection (horizontal only)
+                if (absDx > 30 && absDx > absDy) {
+                    if (dx > 0) {
+                        // Swipe right
+                        if (typeof gameState.moveRight === 'function') {
+                            gameState.moveRight();
+                        } else {
+                            // fallback: simulate right arrow key
+                            const evt = new KeyboardEvent('keydown', {key: 'ArrowRight', code: 'ArrowRight'});
+                            window.dispatchEvent(evt);
+                        }
+                    } else {
+                        // Swipe left
+                        if (typeof gameState.moveLeft === 'function') {
+                            gameState.moveLeft();
+                        } else {
+                            // fallback: simulate left arrow key
+                            const evt = new KeyboardEvent('keydown', {key: 'ArrowLeft', code: 'ArrowLeft'});
+                            window.dispatchEvent(evt);
                         }
                     }
+                } else {
+                    // Double-tap detection
+                    const now = Date.now();
+                    if (now - lastTap < 350) {
+                        // Double-tap detected
+                        if (typeof jump === 'function') jump();
+                        lastTap = 0;
+                        if (tapTimeout) clearTimeout(tapTimeout);
+                    } else {
+                        lastTap = now;
+                        if (tapTimeout) clearTimeout(tapTimeout);
+                        tapTimeout = setTimeout(() => { lastTap = 0; }, 400);
+                    }
                 }
-            });
+            }
+        });
+    }
+    setupTouchControls();
 
-            document.addEventListener("keyup", (e) => {
-                gameState.keys[e.code] = false;
-                gameState.keys[e.key] = false;
-            });
-
-            window.addEventListener("resize", () => {
-                gameState.isMobile = window.innerWidth <= 768;
-                gameState.updateLanes();
-            });
-
-            document.addEventListener("contextmenu", (e) => {
-                e.preventDefault();
-            });
-
-            let lastTouchEnd = 0;
-            document.addEventListener("touchend", (e) => {
-                const now = (new Date()).getTime();
-                if (now - lastTouchEnd <= 300) {
-                    e.preventDefault();
-                }
-                lastTouchEnd = now;
-            }, false);
+    let lastTouchEnd = 0;
+    document.addEventListener("touchend", (e) => {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            e.preventDefault();
         }
+        lastTouchEnd = now;
+    }, false);
+}
 
         // Add CSS animations for effects
         const style = document.createElement('style');

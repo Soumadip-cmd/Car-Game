@@ -54,6 +54,9 @@
                     🏆 Achievements
                 </button>
             </div>
+            <div class="controls-hint" style="margin-top:32px; text-align:center; color:#a0a0a0;">
+                <strong>Controls:</strong> ← → Move • ↑ Speed Up • ↓ Brake • Space Jump • P Pause
+            </div>
         </div>
 
         <!-- Tutorial Screen -->
@@ -333,6 +336,9 @@
         </div>
 
         <!-- Game Screen -->
+        
+            
+         
         <div id="game-screen" class="screen hidden">
             <div class="game-hud">
                 <div class="hud-item">
@@ -358,7 +364,19 @@
                 <div class="player-car" id="player-car"></div>
                 <div class="particles-container" id="particles"></div>
                 
-                <!-- Game Over Modal -->
+                <!-- Touch instructions for mobile -->
+                <div class="touch-instructions" id="touch-instructions">
+                    <div class="touch-hint">
+                        <span>👆 Swipe car left/right to move</span>
+                        <span>👆👆 Double-tap car to jump</span>
+                    </div>
+                </div>
+
+            
+                
+            </div>
+
+            <!-- Game Over Modal -->
                 <div id="game-over-modal" class="game-modal hidden">
                     <div class="modal-content">
                         <h3>🏁 Race Complete!</h3>
@@ -424,9 +442,7 @@
             </div>
 
             <div class="desktop-controls">
-                <div class="controls-hint">
-                    <strong>Controls:</strong> ← → Move • ↑ Speed Up • ↓ Brake • Space Jump • P Pause
-                </div>
+                <!-- Controls hint moved to menu-screen -->
             </div>
         </div>
     </div>
